@@ -63,12 +63,12 @@ static void updateStepCounter()
                 goalReached = true;
                 vibes_enqueue_custom_pattern(pat);
             }
-            snprintf(step_text, sizeof(step_text), "%i/%i Reached!", (int)health_service_sum_today(metric), goal);
+            snprintf(step_text, sizeof(step_text), "%i/%i Reached!", current, goal);
         }
         else
         {
             goalReached = false;
-            snprintf(step_text, sizeof(step_text), "%i/%i", (int)health_service_sum_today(metric), goal);
+            snprintf(step_text, sizeof(step_text), "%i/%i", current, goal);
         }
     }
 
