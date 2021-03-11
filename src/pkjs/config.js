@@ -11,6 +11,12 @@ module.exports = [
           "messageKey": "StepGoal",
           "defaultValue": "10000",
           "label": "Step Goal"
+        },
+        {
+          "type": "toggle",
+          "messageKey": "ShowClock",
+          "defaultValue": true,
+          "label": "Show Clock"
         }
       ]
     },

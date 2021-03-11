@@ -6,14 +6,15 @@ static TextLayer *date_layer;
 static TextLayer *charge_layer;
 static TextLayer *step_layer;
 
+bool showClock = false;
 bool goalReached = false;
 int goal = 10000;
 int today = 0;
 
-static const uint32_t const segments[] = { 375, 250, 375 };
+static const uint32_t const segments[] = {375, 250, 375};
 VibePattern pat = {
-  .durations = segments,
-  .num_segments = ARRAY_LENGTH(segments),
+    .durations = segments,
+    .num_segments = ARRAY_LENGTH(segments),
 };
 
 static void handle_battery_state(BatteryChargeState charge)
@@ -27,6 +28,9 @@ static void handle_battery_state(BatteryChargeState charge)
 
 static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed)
 {
+    if (!showClock)
+        return;
+
     static char time_text[24];
     static char date_text[24];
 
@@ -70,9 +74,24 @@ static void updateStepCounter()
             goalReached = false;
             snprintf(step_text, sizeof(step_text), "%i/%i", current, goal);
         }
-    }
 
-    text_layer_set_text(step_layer, step_text);
+        if (showClock)
+        {
+            text_layer_set_text(step_layer, step_text);
+        }
+        else
+        {
+            static char time_text[24];
+            static char date_text[24];
+
+            snprintf(time_text, sizeof(time_text), "%i", current);
+            snprintf(date_text, sizeof(date_text), "%i", goal);
+
+            text_layer_set_text(time_layer, time_text);
+            text_layer_set_text(date_layer, date_text);
+            text_layer_set_text(step_layer, "");
+        }
+    }
 }
 
 static void health_handler(HealthEventType event, void *context)
@@ -110,7 +129,7 @@ static void init_clock(Window *window)
     text_layer_set_background_color(charge_layer, GColorClear);
     text_layer_set_font(charge_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 
-    step_layer = text_layer_create(GRect(0, (bounds.size.h - 17), bounds.size.w-2, bounds.size.h));
+    step_layer = text_layer_create(GRect(0, (bounds.size.h - 17), bounds.size.w - 2, bounds.size.h));
     text_layer_set_text_alignment(step_layer, GTextAlignmentLeft);
     text_layer_set_text_color(step_layer, GColorWhite);
     text_layer_set_background_color(step_layer, GColorClear);
@@ -160,15 +179,23 @@ static void window_unload(Window *window)
 static void inbox_received_handler(DictionaryIterator *iter, void *context)
 {
     Tuple *config_goal = dict_find(iter, 0);
+    Tuple *config_show_clock = dict_find(iter, 1);
+
     if (config_goal)
     {
         goal = atoi(config_goal->value->cstring);
-        if(!goal) {
+        if (!goal)
+        {
             goal = 10000; // failed, revert to default value
         }
-
-        updateStepCounter();
     }
+
+    if (config_show_clock)
+    {
+        showClock = config_show_clock->value->int32 == 1;
+    }
+
+    updateStepCounter();
 }
 
 static void init(void)

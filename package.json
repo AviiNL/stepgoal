@@ -24,7 +24,8 @@
       "watchface": true
     },
     "messageKeys": {
-      "StepGoal": 0
+      "StepGoal": 0,
+      "ShowClock": 1
     },
     "resources": {
       "media": []
