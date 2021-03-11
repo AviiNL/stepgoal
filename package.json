@@ -1,0 +1,37 @@
+{
+  "name": "stepgoal",
+  "author": "Avii",
+  "version": "1.0.0",
+  "keywords": [
+    "pebble-watchface"
+  ],
+  "private": true,
+  "dependencies": {
+    "pebble-clay": "^1.0.4"
+  },
+  "pebble": {
+    "displayName": "Step Goal",
+    "uuid": "9f0c0e32-2b54-4df7-8ba2-e5bba8801786",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": {
+      "StepGoal": 0
+    },
+    "resources": {
+      "media": []
+    },
+    "capabilities": [
+      "configurable",
+      "health"
+    ]
+  }
+}
