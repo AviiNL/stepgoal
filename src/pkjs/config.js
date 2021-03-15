@@ -17,6 +17,18 @@ module.exports = [
           "messageKey": "ShowClock",
           "defaultValue": true,
           "label": "Show Clock"
+        },
+        {
+          "type": "toggle",
+          "messageKey": "ShowBattery",
+          "defaultValue": true,
+          "label": "Show Battery"
+        },
+        {
+          "type": "toggle",
+          "messageKey": "ShortNotation",
+          "defaultValue": false,
+          "label": "Short Step Notation"
         }
       ]
     },

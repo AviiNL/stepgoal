@@ -25,7 +25,9 @@
     },
     "messageKeys": {
       "StepGoal": 0,
-      "ShowClock": 1
+      "ShowClock": 1,
+      "ShowBattery": 2,
+      "ShortNotation": 4
     },
     "resources": {
       "media": []

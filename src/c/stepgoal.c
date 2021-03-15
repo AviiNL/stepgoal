@@ -1,12 +1,19 @@
 #include <pebble.h>
 
+#define CONFIG_STEP_GOAL 0
+#define CONFIG_SHOW_CLOCK 1
+#define CONFIG_SHOW_BATTERY 2
+#define CONFIG_SHORT_NOTATION 4
+
 static Window *window;
 static TextLayer *time_layer;
 static TextLayer *date_layer;
 static TextLayer *charge_layer;
 static TextLayer *step_layer;
 
-bool showClock = false;
+bool showClock = true;
+bool showBattery = true;
+bool shortNotation = false;
 bool goalReached = false;
 int goal = 10000;
 int today = 0;
@@ -19,11 +26,15 @@ VibePattern pat = {
 
 static void handle_battery_state(BatteryChargeState charge)
 {
-    static char charge_text[5];
 
-    snprintf(charge_text, sizeof(charge_text), "%d%%", charge.charge_percent);
-
-    text_layer_set_text(charge_layer, charge_text);
+    if (showBattery)
+    {
+        static char charge_text[5];
+        snprintf(charge_text, sizeof(charge_text), "%d%%", charge.charge_percent);
+        text_layer_set_text(charge_layer, charge_text);
+        return;
+    }
+    text_layer_set_text(charge_layer, " ");
 }
 
 static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed)
@@ -67,16 +78,32 @@ static void updateStepCounter()
                 goalReached = true;
                 vibes_enqueue_custom_pattern(pat);
             }
-            snprintf(step_text, sizeof(step_text), "%i/%i Reached!", current, goal);
+            if (shortNotation)
+            {
+                snprintf(step_text, sizeof(step_text), "%ik/%ik Reached!", (int)(current / 1000), (int)(goal / 1000));
+            }
+            else
+            {
+                snprintf(step_text, sizeof(step_text), "%i/%i Reached!", current, goal);
+            }
         }
         else
         {
             goalReached = false;
-            snprintf(step_text, sizeof(step_text), "%i/%i", current, goal);
+            if (shortNotation)
+            {
+                snprintf(step_text, sizeof(step_text), "%ik/%ik", (int)(current / 1000), (int)(goal / 1000));
+            }
+            else
+            {
+                snprintf(step_text, sizeof(step_text), "%i/%i", current, goal);
+            }
         }
 
         if (showClock)
         {
+            text_layer_set_font(time_layer, fonts_get_system_font(FONT_KEY_LECO_28_LIGHT_NUMBERS));
+            text_layer_set_font(date_layer, fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS));
             text_layer_set_text(step_layer, step_text);
         }
         else
@@ -84,8 +111,20 @@ static void updateStepCounter()
             static char time_text[24];
             static char date_text[24];
 
-            snprintf(time_text, sizeof(time_text), "%i", current);
-            snprintf(date_text, sizeof(date_text), "%i", goal);
+            if (shortNotation)
+            {
+                text_layer_set_font(time_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
+                text_layer_set_font(date_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+                snprintf(time_text, sizeof(time_text), "%ik", (int)(current / 1000));
+                snprintf(date_text, sizeof(date_text), "%ik", (int)(goal / 1000));
+            }
+            else
+            {
+                text_layer_set_font(time_layer, fonts_get_system_font(FONT_KEY_LECO_28_LIGHT_NUMBERS));
+                text_layer_set_font(date_layer, fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS));
+                snprintf(time_text, sizeof(time_text), "%i", current);
+                snprintf(date_text, sizeof(date_text), "%i", goal);
+            }
 
             text_layer_set_text(time_layer, time_text);
             text_layer_set_text(date_layer, date_text);
@@ -140,8 +179,11 @@ static void init_clock(Window *window)
     handle_second_tick(current_time, SECOND_UNIT);
     tick_timer_service_subscribe(SECOND_UNIT, &handle_second_tick);
 
-    handle_battery_state(battery_state_service_peek());
-    battery_state_service_subscribe(&handle_battery_state);
+    if (showBattery)
+    {
+        handle_battery_state(battery_state_service_peek());
+        battery_state_service_subscribe(&handle_battery_state);
+    }
 
 #if defined(PBL_HEALTH)
     // Attempt to subscribe
@@ -178,8 +220,10 @@ static void window_unload(Window *window)
 
 static void inbox_received_handler(DictionaryIterator *iter, void *context)
 {
-    Tuple *config_goal = dict_find(iter, 0);
-    Tuple *config_show_clock = dict_find(iter, 1);
+    Tuple *config_goal = dict_find(iter, CONFIG_STEP_GOAL);
+    Tuple *config_show_clock = dict_find(iter, CONFIG_SHOW_CLOCK);
+    Tuple *config_show_battery = dict_find(iter, CONFIG_SHOW_BATTERY);
+    Tuple *config_short_notation = dict_find(iter, CONFIG_SHORT_NOTATION);
 
     if (config_goal)
     {
@@ -193,6 +237,17 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context)
     if (config_show_clock)
     {
         showClock = config_show_clock->value->int32 == 1;
+    }
+
+    if (config_show_battery)
+    {
+        showBattery = config_show_battery->value->int32 == 1;
+        handle_battery_state(battery_state_service_peek());
+    }
+
+    if (config_short_notation)
+    {
+        shortNotation = config_short_notation->value->int32 == 1;
     }
 
     updateStepCounter();
